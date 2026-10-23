@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nokos Order - Mini App</title>
+    <!-- Google Fonts (Inter) & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --input-bg: #ffffff;
+            --receipt-bg: #f8fafc;
+            --modal-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+            --receipt-bg: #0f172a;
+            --modal-bg: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 16px auto;
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* SALDO WIDGET */
+        .balance-card {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: 16px;
+            padding: 16px 20px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .balance-row-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        .balance-row-top span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .balance-row-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .balance-amount {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .balance-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .add-balance-btn {
+            background: #ffffff;
+            color: #2563eb;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+        .add-balance-btn:active { transform: scale(0.95); }
+        .add-balance-btn:hover { background-color: #f1f5f9; }
+
+        .theme-toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+        /* FORM CARD */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            background-color: var(--input-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .disabled-field {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        .version-grid {
+            display: flex;
+            gap: 10px;
+        }
+
+        .version-option {
+            flex: 1;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--input-bg);
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .version-option.active {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            background-color: var(--input-bg);
+            outline: none;
+        }
+
+        .qty-boxes {
+            display: flex;
+            gap: 8px;
+        }
+
+        .qty-box {
+            flex: 1;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 700;
+            background: var(--input-bg);
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .qty-box.active {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+        }
+
+        /* MODAL SHEET */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 2000;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal-content {
+            background: var(--modal-bg);
+            width: 100%;
+            max-width: 480px;
+            max-height: 85vh;
+            border-radius: 24px 24px 0 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .modal-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
+
+        .modal-close {
+            background: var(--receipt-bg);
+            border: 1px solid var(--border-color);
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .modal-search {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .modal-search input {
+            width: 100%;
+            padding: 10px 14px 10px 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            outline: none;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        .modal-search i {
+            position: absolute;
+            left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        /* GRID NEGARA (2 Kolom, Bendera di Atas) */
+        .country-grid-container {
+            overflow-y: auto;
+            max-height: 400px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 2px 4px 10px 4px;
+        }
+
+        .country-item-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 12px 8px;
+            background: var(--receipt-bg);
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            gap: 6px;
+        }
+        .country-item-card:hover { border-color: #2563eb; }
+
+        /* LIST LAYANAN (1 Kolom Vertikal) */
+        .service-grid-container {
+            overflow-y: auto;
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 10px;
+        }
+
+        .service-item-card {
+            display: flex;
+            flex-direction: column;
+            padding: 12px 14px;
+            background: var(--receipt-bg);
+            border: 1.5px solid var(--border-color);
+            border-radius: 14px;
+            cursor: pointer;
+            gap: 8px;
+        }
+        .service-item-card:hover {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.03);
+        }
+
+        .service-item-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .service-item-icon {
+            width: 40px; height: 40px;
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .service-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .service-item-info h5 { 
+            font-size: 0.9rem; 
+            color: var(--text-main); 
+            font-weight: 600; 
+        }
+
+        .service-item-price {
+            font-size: 0.85rem;
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+        .service-item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* RINGKASAN RECEIPT */
+        .receipt-card {
+            background: var(--receipt-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            margin: 16px 0;
+        }
+
+        .receipt-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        .receipt-row span:last-child { font-weight: 600; color: var(--text-main); }
+
+        .btn-submit {
+            width: 100%;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-submit:hover { background-color: #1d4ed8; }
+
+        /* TOMBOL FAVORIT FONTAWESOME */
+        .fav-btn {
+            background: var(--receipt-bg);
+            border: 1.5px solid var(--border-color);
+            color: var(--text-muted);
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .fav-btn:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        .fav-btn.active {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- Element Penyimpan Metadata Telegram ID -->
+    <div id="appContainer" data-telegram-id="<%= user?.telegram?.uid || user?.telegramId || '' %>"></div>
+
+    <div class="container">
+        
+        <!-- SALDO WIDGET -->
+        <div class="balance-card">
+            <div class="balance-row-top">
+                <span>Akun Anda: <%= user?.name || "Anonim" %></span>
+            </div>
+            <div class="balance-row-bottom">
+                <div class="balance-amount" id="userBalanceText">
+                    Rp <%= (user?.balance || 0).toLocaleString('id-ID') %>
+                </div>
+                <div class="balance-actions">
+                    <button type="button" class="add-balance-btn" onclick="openTopUpPage()">
+                        <i class="fa-solid fa-plus"></i> Saldo
+                    </button>
+                    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM ORDER -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fa-solid fa-cart-shopping" style="color: #2563eb;"></i> Order Nomor Kosong (OTP)
+            </div>
+            <div class="card-subtitle" id="serviceLoadSubtitle">Pilih negara tujuan terlebih dahulu</div>
+
+            <form id="orderForm" onsubmit="handleOrderSubmit(event)">
+                
+                <!-- 1. NEGARA -->
+                <div class="form-group">
+                    <label class="form-label">Pilih Negara Tujuan <span style="color: #dc2626;">*</span></label>
+                    <div class="custom-select-trigger" onclick="fetchAndOpenCountries()">
+                        <span id="selectedCountryText" style="color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                            -- Wajib Pilih Negara Dulu --
+                        </span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <input type="hidden" id="countryValue" required>
+                </div>
+
+                <div id="dependentFields" class="disabled-field">
+                    
+                    <!-- 2. LAYANAN -->
+                    <div class="form-group">
+                        <label class="form-label">Pilih Layanan Aplikasi <span style="color: #dc2626;">*</span></label>
+                        <div class="custom-select-trigger" onclick="fetchAndOpenServices()">
+                            <span id="selectedServiceText" style="display: flex; align-items: center; gap: 8px;">
+                                -- Pilih Layanan --
+                            </span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <input type="hidden" id="serviceValue">
+                    </div>
+
+                    <!-- OPERATOR -->
+                    <div class="form-group">
+                        <label class="form-label">Operator Seluler</label>
+                        <select class="form-select" id="operatorSelect" onchange="updateOperator()">
+                            <option value="">Bebas / Any Operator</option>
+                        </select>
+                    </div>
+
+                    <!-- VERSI NOMOR TELEPON -->
+                    <div class="form-group">
+                        <label class="form-label">Versi Nomor Telepon</label>
+                        <div class="version-grid">
+                            <div class="version-option active" onclick="selectVersion(this, 'v1')">Versi 1</div>
+                            <div class="version-option" onclick="selectVersion(this, 'v2')">Versi 2</div>
+                        </div>
+                        <input type="hidden" id="versionInput" value="v1">
+                    </div>
+
+                    <!-- QTY -->
+                    <div class="form-group">
+                        <label class="form-label" id="qtyLabel">Jumlah Nomor (Maks 5 aktif)</label>
+                        <div class="qty-boxes">
+                            <div class="qty-box active" onclick="selectQty(1)">1</div>
+                            <div class="qty-box" onclick="selectQty(2)">2</div>
+                            <div class="qty-box" onclick="selectQty(3)">3</div>
+                            <div class="qty-box" onclick="selectQty(4)">4</div>
+                            <div class="qty-box" onclick="selectQty(5)">5</div>
+                        </div>
+                        <input type="hidden" id="qtyInput" value="1">
+                    </div>
+
+                </div>
+
+                <!-- RINGKASAN -->
+                <div class="receipt-card">
+                    <div class="receipt-title"><i class="fa-solid fa-receipt"></i> Detail Ringkasan Order</div>
+                    <div class="receipt-row"><span>Negara:</span><span id="resCountry">-</span></div>
+                    <div class="receipt-row"><span>Layanan:</span><span id="resService">-</span></div>
+                    <div class="receipt-row"><span>Operator:</span><span id="resOperator">-</span></div>
+                    <div class="receipt-row"><span>Versi Nomor:</span><span id="resVersion">Versi 1</span></div>
+                    <div class="receipt-row"><span>Jumlah:</span><span id="resQty">-</span></div>
+                    <div class="receipt-row" style="margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+                        <span style="font-weight: 700; color: var(--text-main);">Estimasi Harga:</span>
+                        <span id="resPrice" style="color: #2563eb; font-weight: 800; font-size: 0.95rem;">-</span>
+                    </div>
+                </div>
+
+                <!-- TOMBOL BELI & TOMBOL FAVORIT FONTAWESOME BERSEBELAHAN -->
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="submit" id="submitBtn" class="btn-submit disabled-field" style="flex: 1;">
+                        <i class="fa-solid fa-cart-shopping"></i> Beli Nomor
+                    </button>
+                    <button type="button" id="favBtn" class="fav-btn disabled-field" onclick="toggleFavorite(this)" title="Favorit">
+                        <i class="fa-solid fa-heart"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- MODAL NEGARA -->
+    <div class="modal-overlay" id="countryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Pilih Negara Tujuan</div>
+                <button class="modal-close" onclick="closeModal('countryModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Cari negara..." onkeyup="filterCountryList(this)">
+            </div>
+            <div id="countryGridList">
+                <div class="country-item-card"><h5>Memuat negara...</h5></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LAYANAN -->
+    <div class="modal-overlay" id="serviceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Pilih Layanan / Aplikasi</div>
+                <button class="modal-close" onclick="closeModal('serviceModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Cari layanan..." onkeyup="filterServiceList(this)">
+            </div>
+            <div class="service-grid-container" id="serviceGridList">
+                <div class="service-item-card"><h5>Pilih negara terlebih dahulu...</h5></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panggil File Eksternal Cache & Helper Harga -->
+    <script src="/js/nokos_cache.js"></script>
+
+    <!-- FUNGSI LOGIKA FRONTEND UTAMA -->
+    <script>
+        let selectedServiceCode = null;
+        let selectedServiceName = null;
+        let selectedCountryId = null;
+        let selectedCountryName = null;
+        let selectedOperator = 'Bebas / Any';
+        let selectedVersion = 'v1';
+        let selectedQty = 1;
+        let currentItemPrice = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTelegramApp();
+            try {
+                window.SERVER_COUNTRIES = await initCountry();
+            } catch (err) {
+                console.error("Gagal menginisialisasi data negara:", err);
+            }
+        });
+
+        function initTelegramApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            }
+        }
+
+        // 1. Tampilkan Modal Negara
+        function fetchAndOpenCountries() {
+            const countryList = document.getElementById('countryGridList');
+            const countries = window.SERVER_COUNTRIES || {};
+            let html = '<div class="country-grid-container">';
+            
+            const countryEntries = Array.isArray(countries.result) 
+                ? countries.result.map(c => [c.id, c]) 
+                : Object.entries(countries.result || countries);
+
+            countryEntries.forEach(([key, val]) => {
+                if (['success', 'status', 'code', 'message'].includes(key)) return;
+                
+                const countryId = String(typeof val === 'object' && val !== null ? (val.id !== undefined ? val.id : key) : key).trim();
+                const countryName = typeof val === 'object' && val !== null ? (val.eng || val.en || val.name || `Negara ${countryId}`) : String(val);
+                const flagSvgPath = `/assets/country/${countryId}.svg`;
+                const safeCountryName = countryName.replace(/'/g, "\\'");
+
+                html += `
+                    <div class="country-item-card" onclick="selectCountry('${countryId}', '${safeCountryName}')">
+                        <div id="cnt-icon-${countryId}" style="width:36px; height:26px; display:flex; align-items:center; justify-content:center;">
+                            <i class="fa-solid fa-globe" style="font-size:1.2rem; color:#2563eb;"></i>
+                        </div>
+                        <h5 style="font-size:0.75rem; font-weight:600; color:var(--text-main); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${countryName}</h5>
+                    </div>
+                `;
+
+                const imgLoader = new Image();
+                imgLoader.src = flagSvgPath;
+                imgLoader.onload = () => {
+                    const iconEl = document.getElementById(`cnt-icon-${countryId}`);
+                    if (iconEl) {
+                        iconEl.outerHTML = `<img src="${flagSvgPath}" width="36" height="26" style="object-fit: cover; border-radius: 4px; border:1px solid var(--border-color);" />`;
+                    }
+                };
+            });
+            html += '</div>';
+            countryList.innerHTML = html || '<div class="country-item-card"><h5>Tidak ada negara</h5></div>';
+            openModal('countryModal');
+        }
+
+        // 2. Pilih Negara (Reset Total Pilihan Layanan & Variable)
+        async function selectCountry(id, name) {
+            selectedCountryId = String(id).trim();
+            selectedCountryName = name;
+            
+            selectedServiceCode = null;
+            selectedServiceName = null;
+            currentItemPrice = 0;
+
+            document.getElementById('countryValue').value = selectedCountryId;
+            document.getElementById('selectedCountryText').innerHTML = `
+                <img src="/assets/country/${selectedCountryId}.svg" width="22" height="16" style="object-fit:cover; border-radius:3px;" onerror="this.style.display='none'">
+                <b>${name}</b>
+            `;
+            document.getElementById('selectedCountryText').style.color = 'var(--text-main)';
+            
+            document.getElementById('serviceValue').value = '';
+            document.getElementById('selectedServiceText').innerHTML = `<span style="color: var(--text-muted);">-- Pilih Layanan untuk ${name} --</span>`;
+
+            closeModal('countryModal');
+            document.getElementById('dependentFields').classList.remove('disabled-field');
+
+            const operatorSelect = document.getElementById('operatorSelect');
+            operatorSelect.innerHTML = '<option value="">Memuat operator...</option>';
+            const operators = await getOperator(selectedCountryId);
+            renderOperatorOptions(operators);
+
+            await updateSummary();
+        }
+
+        // 3. Fetch Service & Harga Menggunakan nokos_prices di LocalStorage (Validasi 24 Jam)
+        async function fetchAndOpenServices() {
+            if (!selectedCountryId) {
+                alert('Silakan pilih negara terlebih dahulu!');
+                return;
+            }
+
+            const listContainer = document.getElementById('serviceGridList');
+            listContainer.innerHTML = '<div class="service-item-card" style="text-align: center;"><h5><i class="fa-solid fa-spinner fa-spin"></i> Memuat layanan & harga...</h5></div>';
+            openModal('serviceModal');
+
+            const currentCountryId = String(selectedCountryId).trim();
+            let servicesArr = [];
+            let countryPrices = {};
+
+            try {
+                // 1. Ambil Services dari API
+                const resServices = await fetch(`/api/v1/getServices?country=${encodeURIComponent(currentCountryId)}`);
+                const dataServices = await resServices.json();
+
+                if (resServices.ok && (dataServices.status === 'success' || dataServices.success === true || Array.isArray(dataServices))) {
+                    servicesArr = dataServices.data || dataServices.services || (Array.isArray(dataServices) ? dataServices : []);
+                }
+
+                // 2. Periksa cache nokos_prices & nokos_prices_time di LocalStorage (Batas 24 Jam)
+                const twentyFourHours = 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                
+                let cachedPricesRaw = localStorage.getItem('nokos_prices');
+                let cachedTime = localStorage.getItem('nokos_prices_time');
+                let isExpired = false;
+
+                if (!cachedTime || (now - parseInt(cachedTime, 10)) > twentyFourHours) {
+                    isExpired = true;
+                }
+
+                let allPricesData = {};
+                if (cachedPricesRaw && !isExpired) {
+                    try {
+                        allPricesData = JSON.parse(cachedPricesRaw);
+                    } catch (e) {
+                        isExpired = true;
+                    }
+                } else {
+                    isExpired = true;
+                }
+
+                // Jika cache sudah lebih dari 24 jam atau belum ada sama sekali, fetch API getPrices
+                if (isExpired || (!allPricesData[currentCountryId] && !allPricesData[Number(currentCountryId)])) {
+                    try {
+                        const resPrices = await fetch(`/api/v1/getPrices?country=${encodeURIComponent(currentCountryId)}`);
+                        const dataPrices = await resPrices.json();
+
+                        if (resPrices.ok && (dataPrices.status === 'success' || dataPrices.status === true || typeof dataPrices === 'object')) {
+                            const fetchedData = dataPrices.data || dataPrices.prices || dataPrices;
+                            
+                            if (!allPricesData || typeof allPricesData !== 'object') allPricesData = {};
+                            
+                            if (fetchedData[currentCountryId] || fetchedData[Number(currentCountryId)]) {
+                                allPricesData[currentCountryId] = fetchedData[currentCountryId] || fetchedData[Number(currentCountryId)];
+                            } else {
+                                allPricesData[currentCountryId] = fetchedData;
+                            }
+
+                            localStorage.setItem('nokos_prices', JSON.stringify(allPricesData));
+                            localStorage.setItem('nokos_prices_time', now.toString());
+                        }
+                    } catch (apiErr) {
+                        console.error("Gagal memperbarui harga dari API:", apiErr);
+                    }
+                }
+
+                let targetPricesObj = allPricesData[currentCountryId] || allPricesData[Number(currentCountryId)] || {};
+
+                countryPrices = {};
+                if (targetPricesObj && typeof targetPricesObj === 'object') {
+                    for (const [k, v] of Object.entries(targetPricesObj)) {
+                        countryPrices[String(k).toLowerCase()] = v;
+                    }
+                }
+
+            } catch (error) {
+                console.error("Gagal memuat data layanan:", error);
+                listContainer.innerHTML = '<div class="service-item-card"><h5>Gagal memuat data. Periksa koneksi internet Anda.</h5></div>';
+                return;
+            }
+
+            let html = '';
+            if (servicesArr && servicesArr.length > 0) {
+                for (const s of servicesArr) {
+                    const codeOriginal = String(s.code || s.id || '').trim();
+                    const codeLower = codeOriginal.toLowerCase();
+                    const name = s.name || s.title || codeOriginal;
+
+                    let itemPriceUSD = 0;
+                    let physicalStock = 0;
+                    let totalStock = 0;
+
+                    if (countryPrices && countryPrices[codeLower]) {
+                        const pData = countryPrices[codeLower];
+                        itemPriceUSD = typeof pData === 'number' ? pData : (pData.cost || pData.price || 0);
+                        physicalStock = pData.physicalCount !== undefined ? pData.physicalCount : 0;
+                        totalStock = pData.count !== undefined ? pData.count : 0;
+                    }
+
+                    const formattedPriceIDR = itemPriceUSD > 0 ? await cv(itemPriceUSD) : 'Cek';
+
+                    html += `
+                        <div class="service-item-card" onclick="selectService('${codeOriginal}', '${name.replace(/'/g, "\\'")}', ${itemPriceUSD})">
+                            <div class="service-item-main">
+                                <div class="service-item-icon" id="svc-icon-${codeOriginal}">
+                                    <i class="fa-solid fa-mobile-screen-button"></i>
+                                </div>
+                                <div class="service-item-info">
+                                    <h5>${name}</h5>
+                                    <span class="service-item-price">${formattedPriceIDR}</span>
+                                </div>
+                            </div>
+                            <div class="service-item-footer">
+                                <span style="color: var(--text-muted);">Stok Fisik: <b style="color: var(--text-main);">${Number(physicalStock).toLocaleString('id-ID')}</b></span>
+                                <span style="color: var(--text-muted);">Total Stok: <b style="color: var(--text-main);">${Number(totalStock).toLocaleString('id-ID')}</b></span>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                html = '<div class="service-item-card"><h5>Tidak ada layanan tersedia untuk negara ini</h5></div>';
+            }
+
+            listContainer.innerHTML = html;
+
+            servicesArr.forEach(s => {
+                const codeOriginal = String(s.code || s.id || '').trim();
+                const imgLoader = new Image();
+                imgLoader.src = `/assets/services/${codeOriginal}.webp`;
+                imgLoader.onload = () => {
+                    const iconEl = document.getElementById(`svc-icon-${codeOriginal}`);
+                    if (iconEl) {
+                        iconEl.outerHTML = `<img src="/assets/services/${codeOriginal}.webp" width="40" height="40" style="object-fit: contain; border-radius: 10px;" />`;
+                    }
+                };
+            });
+        }
+
+        async function selectService(code, name, priceUSD) {
+            selectedServiceCode = code;
+            selectedServiceName = name;
+            currentItemPrice = parseFloat(priceUSD) || 0;
+
+            document.getElementById('serviceValue').value = code;
+            document.getElementById('selectedServiceText').innerHTML = `
+                <img src="/assets/services/${code}.webp" width="22" height="22" style="object-fit:contain; border-radius:4px;" onerror="this.style.display='none'">
+                <b>${name}</b>
+            `;
+            
+            closeModal('serviceModal');
+            await updateSummary();
+        }
+
+        function renderOperatorOptions(operators) {
+            const operatorSelect = document.getElementById('operatorSelect');
+            let optionsHtml = '<option value="">Bebas / Any Operator</option>';
+            const opEntries = Array.isArray(operators) ? operators.map(o => [o.code || o.id || o, o]) : Object.entries(operators);
+
+            opEntries.forEach(([key, val]) => {
+                if (['success', 'status', 'code', 'message'].includes(key)) return;
+                const opCode = typeof val === 'object' && val !== null ? (val.code || val.id || key) : key;
+                const opName = typeof val === 'object' && val !== null ? (val.name || val.title || key) : String(val);
+                optionsHtml += `<option value="${opCode}">${opName}</option>`;
+            });
+            operatorSelect.innerHTML = optionsHtml;
+        }
+
+        async function updateOperator() {
+            const select = document.getElementById('operatorSelect');
+            selectedOperator = select.options[select.selectedIndex].text;
+            await updateSummary();
+        }
+
+        async function selectVersion(element, version) {
+            document.querySelectorAll('.version-option').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            selectedVersion = version;
+            document.getElementById('versionInput').value = version;
+            await updateSummary();
+        }
+
+        async function selectQty(qty) {
+            selectedQty = qty;
+            document.querySelectorAll('.qty-box').forEach((el, index) => {
+                if (index + 1 === qty) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+            document.getElementById('qtyInput').value = qty;
+            await updateSummary();
+        }
+
+        async function updateSummary() {
+            document.getElementById('resCountry').textContent = selectedCountryName || '-';
+            document.getElementById('resService').textContent = selectedServiceName || '-';
+            document.getElementById('resOperator').textContent = selectedOperator || 'Bebas / Any';
+            document.getElementById('resVersion').textContent = selectedVersion === 'v2' ? 'Versi 2' : 'Versi 1';
+            document.getElementById('resQty').textContent = `${selectedQty} Nomor`;
+
+            const totalPriceUSD = currentItemPrice * selectedQty;
+            
+            if (currentItemPrice > 0) {
+                document.getElementById('resPrice').textContent = await cv(totalPriceUSD);
+            } else {
+                document.getElementById('resPrice').textContent = selectedServiceCode ? 'Rp 0' : '-';
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const favBtn = document.getElementById('favBtn');
+            if (selectedServiceCode && selectedCountryId) {
+                submitBtn.classList.remove('disabled-field');
+                favBtn.classList.remove('disabled-field');
+            } else {
+                submitBtn.classList.add('disabled-field');
+                favBtn.classList.add('disabled-field');
+            }
+        }
+
+        function toggleFavorite(btn) {
+            btn.classList.toggle('active');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        function filterCountryList(input) {
+            const filter = input.value.toLowerCase();
+            const items = document.getElementsByClassName('country-item-card');
+            Array.from(items).forEach(item => {
+                const text = item.textContent || item.innerText;
+                item.style.display = text.toLowerCase().indexOf(filter) > -1 ? 'flex' : 'none';
+            });
+        }
+
+        function filterServiceList(input) {
+            const filter = input.value.toLowerCase();
+            const items = document.getElementsByClassName('service-item-card');
+            Array.from(items).forEach(item => {
+                const text = item.textContent || item.innerText;
+                item.style.display = text.toLowerCase().indexOf(filter) > -1 ? 'flex' : 'none';
+            });
+        }
+
+        function openTopUpPage() {
+            const container = document.getElementById('appContainer');
+            const telegramId = container ? container.getAttribute('data-telegram-id') : '';
+            if (telegramId) {
+                window.location.href = `/t/topup/${telegramId}`;
+            } else {
+                alert('ID Telegram tidak ditemukan.');
+            }
+        }
+
+                async function handleOrderSubmit(e) {
+            e.preventDefault();
+            if (!selectedServiceCode || !selectedCountryId) {
+                alert('Layanan dan negara wajib dipilih!');
+                return;
+            }
+
+            const payload = {
+                service: selectedServiceCode,
+                country: selectedCountryId,
+                operator: document.getElementById('operatorSelect').value,
+                version: selectedVersion
+            };
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses Pembelian...';
+
+            try {
+                // Mengirim permintaan ke endpoint /api/buy dengan method POST
+                const response = await fetch('/api/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (response.ok && (result.success === true || result.status === 'success')) {
+                    alert('Nomor berhasil dibeli!');
+                    // Tambahkan aksi lanjutan di sini jika diperlukan (misal: redirect atau tampilkan nomor)
+                } else {
+                    alert(result.message || 'Gagal membeli nomor.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan koneksi ke server.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Beli Nomor';
+            }
+        }
+
+    </script>
+</body>
+</html>

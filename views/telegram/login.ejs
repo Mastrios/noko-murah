@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title><%= brand_name %> - Autentikasi</title>
+  
+  <!-- Telegram WebApp Library -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Toast Notification Universal -->
+  <script src="/js/handler.js"></script>
+  
+  <!-- Google Fonts: Orbitron & Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-deep: #030712;
+      --card-bg: rgba(13, 20, 36, 0.95);
+      --neon-cyan: #00f0ff;
+      --neon-pink: #ff0055;
+      --neon-green: #00ff88;
+      --neon-yellow: #ffcc00;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-cyber: rgba(0, 240, 255, 0.4);
+      --error-red: #ff4d6d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    /* Background Grid Cyberpunk */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: -1;
+    }
+
+    .cyber-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-cyber);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.15);
+      width: 100%;
+      max-width: 380px;
+      padding: 25px 20px;
+      border-radius: 16px;
+      position: relative;
+    }
+
+    /* Aksen Sudut Cyber */
+    .cyber-card::before {
+      content: ""; position: absolute; top: -1px; left: -1px; width: 12px; height: 12px;
+      border-top: 2px solid var(--neon-cyan); border-left: 2px solid var(--neon-cyan);
+    }
+    .cyber-card::after {
+      content: ""; position: absolute; bottom: -1px; right: -1px; width: 12px; height: 12px;
+      border-bottom: 2px solid var(--neon-cyan); border-right: 2px solid var(--neon-cyan);
+    }
+
+    .logo-glow {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    }
+
+    /* Tab Menu (Masuk / Daftar) */
+    .tab-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+      background: var(--neon-cyan);
+      color: var(--bg-deep);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    input {
+      width: 100%;
+      background: rgba(3, 7, 18, 0.8);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+    }
+
+    input.input-error {
+      border-color: var(--error-red) !important;
+      box-shadow: 0 0 8px rgba(255, 77, 109, 0.3) !important;
+    }
+
+    input.input-success {
+      border-color: var(--neon-green) !important;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.2) !important;
+    }
+
+    /* Wrapper Password untuk Tombol Mata */
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-wrapper input {
+      padding-right: 40px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      outline: none;
+      transition: color 0.2s;
+    }
+
+    .toggle-password:hover {
+      color: var(--neon-cyan);
+    }
+
+    /* Pesan Error Inline */
+    .field-error {
+      display: none;
+      color: var(--error-red);
+      font-size: 11px;
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+
+    .field-error.show {
+      display: block;
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+
+    /* Indikator Kekuatan Password */
+    .password-strength {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .password-strength.show {
+      display: block;
+    }
+
+    .strength-bars {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 5px;
+    }
+
+    .strength-bar {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+
+    .strength-bar.weak { background: var(--error-red); }
+    .strength-bar.medium { background: var(--neon-yellow); }
+    .strength-bar.strong { background: var(--neon-green); }
+
+    .strength-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .strength-text.weak { color: var(--error-red); }
+    .strength-text.medium { color: var(--neon-yellow); }
+    .strength-text.strong { color: var(--neon-green); }
+
+    /* Requirements Checklist */
+    .password-reqs {
+      display: none;
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      border-left: 2px solid var(--border-cyber);
+    }
+
+    .password-reqs.show {
+      display: block;
+    }
+
+    .req-item {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+      transition: color 0.2s;
+    }
+
+    .req-item:last-child { margin-bottom: 0; }
+
+    .req-item .req-icon {
+      display: inline-flex;
+      width: 14px;
+      height: 14px;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .req-item.met {
+      color: var(--neon-green);
+    }
+
+    .req-item.met .req-icon {
+      background: var(--neon-green);
+      color: var(--bg-deep);
+      font-weight: bold;
+    }
+
+    /* Tombol Cyber & Animasi Loading */
+    .cyber-btn {
+      width: 100%;
+      background: var(--neon-cyan);
+      color: var(--bg-deep);
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 14px;
+      font-family: 'Orbitron', sans-serif;
+      cursor: pointer;
+      margin-top: 5px;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cyber-btn:active:not(:disabled) { opacity: 0.8; }
+    
+    .cyber-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: grayscale(30%);
+    }
+
+    /* Spinner Animasi Berputar */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(3, 7, 18, 0.3);
+      border-top: 2px solid var(--bg-deep);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Utilities */
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+
+    .forgot-link {
+      display: block;
+      text-align: right;
+      font-size: 11.5px;
+      color: var(--neon-cyan);
+      margin-top: -8px;
+      margin-bottom: 15px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .forgot-link:hover { text-decoration: underline; }
+
+    /* Card Text Lupa Password / Pendaftaran Tutup */
+    .info-card {
+      background: rgba(0, 240, 255, 0.05);
+      border: 1px dashed var(--border-cyber);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .info-card strong { color: var(--neon-cyan); }
+  </style>
+</head>
+<body>
+
+  <div class="cyber-card">
+    <div class="logo-glow">⚡ <%= brand_name %></div>
+    
+    <!-- Tab Navigasi -->
+    <div class="tab-container">
+      <button class="tab-btn active" onclick="switchTab('login')">Masuk</button>
+      <button class="tab-btn" onclick="switchTab('register')">Daftar</button>
+    </div>
+
+    <!-- 1. SECTION: MASUK (LOGIN) -->
+    <div id="section-login" class="form-section active">
+      <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" required placeholder="email@gmail.com" autocomplete="email">
+          <div class="field-error" id="loginEmailError"></div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('loginPassword', this)">
+              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
+          </div>
+          <div class="field-error" id="loginPasswordError"></div>
+        </div>
+        <a class="forgot-link" onclick="switchTab('forgot')">Lupa Password?</a>
+        <button type="submit" id="loginBtn" class="cyber-btn">
+          <span class="btn-text">MASUK SEKARANG</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. SECTION: DAFTAR (REGISTER) -->
+    <div id="section-register" class="form-section">
+      <% if (isRegistrationOpen) { %>
+        <!-- Jika Pendaftaran DIBUKA -->
+        <form id="registerForm" onsubmit="handleRegister(event)" novalidate>
+          <div class="form-group">
+            <label>Nama Lengkap</label>
+            <input type="text" id="regName" required placeholder="Nama kamu..." autocomplete="name">
+            <div class="field-error" id="regNameError"></div>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="regEmail" required placeholder="email@gmail.com" autocomplete="email">
+            <div class="field-error" id="regEmailError"></div>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="regPassword" required placeholder="••••••••" autocomplete="new-password">
+              <button type="button" class="toggle-password" onclick="togglePasswordVisibility('regPassword', this)">
+                <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              </button>
+            </div>
+            <!-- Indikator Kekuatan Password -->
+            <div class="password-strength" id="passwordStrength">
+              <div class="strength-bars">
+                <div class="strength-bar" id="bar1"></div>
+                <div class="strength-bar" id="bar2"></div>
+                <div class="strength-bar" id="bar3"></div>
+                <div class="strength-bar" id="bar4"></div>
+              </div>
+              <div class="strength-text" id="strengthText">Kekuatan: -</div>
+            </div>
+            <!-- Checklist Persyaratan Password -->
+            <div class="password-reqs" id="passwordReqs">
+              <div class="req-item" id="reqLength"><span class="req-icon">✕</span> Minimal 8 karakter</div>
+              <div class="req-item" id="reqUpper"><span class="req-icon">✕</span> Huruf besar (A-Z)</div>
+              <div class="req-item" id="reqLower"><span class="req-icon">✕</span> Huruf kecil (a-z)</div>
+              <div class="req-item" id="reqNumber"><span class="req-icon">✕</span> Angka (0-9)</div>
+              <div class="req-item" id="reqSymbol"><span class="req-icon">✕</span> Simbol (!@#$%^&*)</div>
+            </div>
+            <div class="field-error" id="regPasswordError"></div>
+          </div>
+          <button type="submit" id="regBtn" class="cyber-btn">
+            <span class="btn-text">BUAT AKUN</span>
+          </button>
+        </form>
+      <% } else { %>
+        <!-- Jika Pendaftaran DITUTUP -->
+        <div class="info-card">
+          ⚠️ <strong>Pendaftaran Ditutup</strong><br><br>
+          Maaf, untuk sementara pendaftaran akun baru sudah dihentikan oleh admin. Silakan coba beberapa saat lagi.
+        </div>
+      <% } %>
+    </div>
+
+    <!-- 3. SECTION: LUPA PASSWORD -->
+    <div id="section-forgot" class="form-section">
+      <div class="info-card" style="border-color: rgba(255,0,85,0.4); background: rgba(255,0,85,0.05);">
+        🔐 <strong>Bantuan Lupa Password</strong><br><br>
+        Silakan hubungi admin di Telegram dan sertakan <strong>email waktu daftar</strong>. Admin akan membantu mengecek akunmu.<br><br>
+        <a href="https://t.me/<%= bot_admin_username %>" target="_blank" class="cyber-btn" style="display:inline-block; text-decoration:none; text-align:center; margin-top:10px;">
+          💬 HUBUNGI ADMIN
+        </a>
+      </div>
+      <button class="tab-btn" onclick="switchTab('login')" style="width:100%; margin-top:15px; background:rgba(255,255,255,0.05);">🔙 Kembali ke Login</button>
+    </div>
+
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    if (tg) tg.expand();
+
+    // ============================================================
+    // VALIDASI EMAIL & PASSWORD
+    // ============================================================
+
+    /**
+     * Validasi email: wajib format email valid DAN wajib @gmail.com
+     * @param {string} email
+     * @returns {{ valid: boolean, message: string }}
+     */
+    function validateEmail(email) {
+      const trimmed = (email || '').trim();
+
+      if (!trimmed) {
+        return { valid: false, message: 'Email wajib diisi.' };
+      }
+
+      // Regex format email umum
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(trimmed)) {
+        return { valid: false, message: 'Format email tidak valid.' };
+      }
+
+      // Wajib domain gmail.com
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+      if (!gmailRegex.test(trimmed)) {
+        return { valid: false, message: 'Email wajib menggunakan domain @gmail.com' };
+      }
+
+      // Cegah email dengan spasi
+      if (/\s/.test(trimmed)) {
+        return { valid: false, message: 'Email tidak boleh mengandung spasi.' };
+      }
+
+      // Panjang email maksimum standar
+      if (trimmed.length > 254) {
+        return { valid: false, message: 'Email terlalu panjang.' };
+      }
+
+      return { valid: true, message: '' };
+    }
+
+    /**
+     * Cek kekuatan password dan persyaratan
+     * @param {string} password
+     * @returns {{
+     *   length: boolean, upper: boolean, lower: boolean,
+     *   number: boolean, symbol: boolean,
+     *   score: number, strength: 'weak'|'medium'|'strong'|'empty',
+     *   allMet: boolean, message: string
+     * }}
+     */
+    function checkPasswordStrength(password) {
+      const pwd = password || '';
+
+      const length = pwd.length >= 8;
+      const upper = /[A-Z]/.test(pwd);
+      const lower = /[a-z]/.test(pwd);
+      const number = /[0-9]/.test(pwd);
+      const symbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(pwd);
+
+      const metCount = [length, upper, lower, number, symbol].filter(Boolean).length;
+
+      let score = 0;
+      if (pwd.length > 0) score += 1;
+      if (pwd.length >= 8) score += 1;
+      if (pwd.length >= 12) score += 1;
+      if (upper && lower) score += 1;
+      if (number) score += 1;
+      if (symbol) score += 1;
+
+      let strength = 'empty';
+      let message = '';
+
+      if (pwd.length === 0) {
+        strength = 'empty';
+        message = '';
+      } else if (metCount <= 2 || pwd.length < 8) {
+        strength = 'weak';
+        message = 'Password lemah';
+      } else if (metCount === 3 || metCount === 4) {
+        strength = 'medium';
+        message = 'Password sedang';
+      } else if (metCount === 5 && pwd.length >= 8) {
+        strength = 'strong';
+        message = 'Password kuat';
+      }
+
+      const allMet = length && upper && lower && number && symbol;
+
+      return { length, upper, lower, number, symbol, score, strength, allMet, message };
+    }
+
+    /**
+     * Validasi password: minimal 8 karakter, kombinasi huruf besar, huruf kecil, angka, dan simbol
+     * @param {string} password
+     * @returns {{ valid: boolean, message: string }}
+     */
+    function validatePassword(password) {
+      const pwd = password || '';
+
+      if (!pwd) {
+        return { valid: false, message: 'Password wajib diisi.' };
+      }
+
+      if (pwd.length < 8) {
+        return { valid: false, message: 'Password minimal 8 karakter.' };
+      }
+
+      if (pwd.length > 128) {
+        return { valid: false, message: 'Password maksimal 128 karakter.' };
+      }
+
+      if (!/[A-Z]/.test(pwd)) {
+        return { valid: false, message: 'Password harus mengandung minimal 1 huruf besar (A-Z).' };
+      }
+
+      if (!/[a-z]/.test(pwd)) {
+        return { valid: false, message: 'Password harus mengandung minimal 1 huruf kecil (a-z).' };
+      }
+
+      if (!/[0-9]/.test(pwd)) {
+        return { valid: false, message: 'Password harus mengandung minimal 1 angka (0-9).' };
+      }
+
+      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(pwd)) {
+        return { valid: false, message: 'Password harus mengandung minimal 1 simbol (!@#$%^&*).' };
+      }
+
+      // Cegah password yang terlalu umum / berurutan
+      const commonWeak = ['password', '12345678', 'qwerty123', 'admin123', 'password123', '11111111', 'abcdefgh'];
+      if (commonWeak.includes(pwd.toLowerCase())) {
+        return { valid: false, message: 'Password terlalu mudah ditebak, gunakan yang lain.' };
+      }
+
+      return { valid: true, message: '' };
+    }
+
+    // ============================================================
+    // HELPER UI
+    // ============================================================
+
+    function showFieldError(inputEl, errorEl, message) {
+      if (inputEl) {
+        inputEl.classList.add('input-error');
+        inputEl.classList.remove('input-success');
+      }
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.add('show');
+      }
+    }
+
+    function showFieldSuccess(inputEl, errorEl) {
+      if (inputEl) {
+        inputEl.classList.remove('input-error');
+        inputEl.classList.add('input-success');
+      }
+      if (errorEl) {
+        errorEl.classList.remove('show');
+        errorEl.textContent = '';
+      }
+    }
+
+    function clearFieldState(inputEl, errorEl) {
+      if (inputEl) {
+        inputEl.classList.remove('input-error', 'input-success');
+      }
+      if (errorEl) {
+        errorEl.classList.remove('show');
+        errorEl.textContent = '';
+      }
+    }
+
+    // ============================================================
+    // PASSWORD STRENGTH UI (untuk form register)
+    // ============================================================
+
+    function updatePasswordStrengthUI(password) {
+      const strengthWrapper = document.getElementById('passwordStrength');
+      const reqWrapper = document.getElementById('passwordReqs');
+      const strengthText = document.getElementById('strengthText');
+      const bars = [
+        document.getElementById('bar1'),
+        document.getElementById('bar2'),
+        document.getElementById('bar3'),
+        document.getElementById('bar4')
+      ];
+
+      const result = checkPasswordStrength(password);
+
+      // Update checklist requirements
+      const reqMap = {
+        reqLength: result.length,
+        reqUpper: result.upper,
+        reqLower: result.lower,
+        reqNumber: result.number,
+        reqSymbol: result.symbol
+      };
+
+      Object.keys(reqMap).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const icon = el.querySelector('.req-icon');
+        if (reqMap[id]) {
+          el.classList.add('met');
+          if (icon) icon.textContent = '✓';
+        } else {
+          el.classList.remove('met');
+          if (icon) icon.textContent = '✕';
+        }
+      });
+
+      // Tampilkan strength bar hanya jika password ada isinya
+      if (password && password.length > 0) {
+        strengthWrapper.classList.add('show');
+        reqWrapper.classList.add('show');
+
+        bars.forEach(b => b.classList.remove('weak', 'medium', 'strong'));
+        strengthText.classList.remove('weak', 'medium', 'strong');
+
+        if (result.strength === 'weak') {
+          bars[0].classList.add('weak');
+          strengthText.classList.add('weak');
+        } else if (result.strength === 'medium') {
+          bars[0].classList.add('medium');
+          bars[1].classList.add('medium');
+          bars[2].classList.add('medium');
+          strengthText.classList.add('medium');
+        } else if (result.strength === 'strong') {
+          bars.forEach(b => b.classList.add('strong'));
+          strengthText.classList.add('strong');
+        }
+
+        strengthText.textContent = 'Kekuatan: ' + (result.message || '-');
+      } else {
+        strengthWrapper.classList.remove('show');
+        reqWrapper.classList.remove('show');
+      }
+    }
+
+    // ============================================================
+    // REAL-TIME VALIDATION LISTENERS
+    // ============================================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- Login Email ---
+      const loginEmail = document.getElementById('loginEmail');
+      const loginEmailError = document.getElementById('loginEmailError');
+      if (loginEmail) {
+        loginEmail.addEventListener('input', () => {
+          if (!loginEmail.value) { clearFieldState(loginEmail, loginEmailError); return; }
+          const r = validateEmail(loginEmail.value);
+          if (r.valid) showFieldSuccess(loginEmail, loginEmailError);
+          else showFieldError(loginEmail, loginEmailError, r.message);
+        });
+        loginEmail.addEventListener('blur', () => {
+          if (!loginEmail.value) return;
+          const r = validateEmail(loginEmail.value);
+          if (r.valid) showFieldSuccess(loginEmail, loginEmailError);
+          else showFieldError(loginEmail, loginEmailError, r.message);
+        });
+      }
+
+      // --- Login Password (untuk login, hanya cek tidak kosong) ---
+      const loginPassword = document.getElementById('loginPassword');
+      const loginPasswordError = document.getElementById('loginPasswordError');
+      if (loginPassword) {
+        loginPassword.addEventListener('input', () => {
+          if (!loginPassword.value) { clearFieldState(loginPassword, loginPasswordError); return; }
+          if (loginPassword.value.length < 1) {
+            showFieldError(loginPassword, loginPasswordError, 'Password wajib diisi.');
+          } else {
+            showFieldSuccess(loginPassword, loginPasswordError);
+          }
+        });
+      }
+
+      // --- Register Name ---
+      const regName = document.getElementById('regName');
+      const regNameError = document.getElementById('regNameError');
+      if (regName) {
+        regName.addEventListener('input', () => {
+          if (!regName.value) { clearFieldState(regName, regNameError); return; }
+          if (regName.value.trim().length < 3) {
+            showFieldError(regName, regNameError, 'Nama minimal 3 karakter.');
+          } else {
+            showFieldSuccess(regName, regNameError);
+          }
+        });
+      }
+
+      // --- Register Email ---
+      const regEmail = document.getElementById('regEmail');
+      const regEmailError = document.getElementById('regEmailError');
+      if (regEmail) {
+        regEmail.addEventListener('input', () => {
+          if (!regEmail.value) { clearFieldState(regEmail, regEmailError); return; }
+          const r = validateEmail(regEmail.value);
+          if (r.valid) showFieldSuccess(regEmail, regEmailError);
+          else showFieldError(regEmail, regEmailError, r.message);
+        });
+        regEmail.addEventListener('blur', () => {
+          if (!regEmail.value) return;
+          const r = validateEmail(regEmail.value);
+          if (r.valid) showFieldSuccess(regEmail, regEmailError);
+          else showFieldError(regEmail, regEmailError, r.message);
+        });
+      }
+
+      // --- Register Password ---
+      const regPassword = document.getElementById('regPassword');
+      const regPasswordError = document.getElementById('regPasswordError');
+      if (regPassword) {
+        regPassword.addEventListener('input', () => {
+          updatePasswordStrengthUI(regPassword.value);
+
+          if (!regPassword.value) {
+            clearFieldState(regPassword, regPasswordError);
+            return;
+          }
+          const r = validatePassword(regPassword.value);
+          if (r.valid) showFieldSuccess(regPassword, regPasswordError);
+          else showFieldError(regPassword, regPasswordError, r.message);
+        });
+      }
+    });
+
+    // ============================================================
+    // TAB & PASSWORD TOGGLE
+    // ============================================================
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      if (tabName === 'login') {
+        document.getElementById('section-login').classList.add('active');
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      } else if (tabName === 'register') {
+        document.getElementById('section-register').classList.add('active');
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      } else if (tabName === 'forgot') {
+        document.getElementById('section-forgot').classList.add('active');
+      }
+    }
+
+    function togglePasswordVisibility(fieldId, btnElement) {
+      const passwordInput = document.getElementById(fieldId);
+      const svgIcon = btnElement.querySelector('.eye-icon');
+
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        svgIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+      } else {
+        passwordInput.type = 'password';
+        svgIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+      }
+    }
+
+    // ============================================================
+    // HANDLER LOGIN
+    // ============================================================
+
+    async function handleLogin(e) {
+      e.preventDefault();
+
+      const emailEl = document.getElementById('loginEmail');
+      const passwordEl = document.getElementById('loginPassword');
+      const emailErrEl = document.getElementById('loginEmailError');
+      const passwordErrEl = document.getElementById('loginPasswordError');
+
+      // Reset state
+      clearFieldState(emailEl, emailErrEl);
+      clearFieldState(passwordEl, passwordErrEl);
+
+      let hasError = false;
+
+      // Validasi email (wajib gmail.com)
+      const emailCheck = validateEmail(emailEl.value);
+      if (!emailCheck.valid) {
+        showFieldError(emailEl, emailErrEl, emailCheck.message);
+        hasError = true;
+      }
+
+      // Validasi password tidak kosong (untuk login, tidak perlu cek strength)
+      if (!passwordEl.value || passwordEl.value.length < 1) {
+        showFieldError(passwordEl, passwordErrEl, 'Password wajib diisi.');
+        hasError = true;
+      }
+
+      if (hasError) {
+        // Fokus ke field error pertama
+        const firstError = document.querySelector('.input-error');
+        if (firstError) firstError.focus();
+        return;
+      }
+
+      const btn = document.getElementById('loginBtn');
+      const btnText = btn.querySelector('.btn-text');
+
+      btn.disabled = true;
+      const originalText = btnText.innerText;
+      btnText.innerHTML = '<span class="spinner"></span> MEMPROSES...';
+
+      const email = emailEl.value.trim().toLowerCase();
+      const password = passwordEl.value;
+      const telegramId = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : null;
+
+      try {
+        const res = await fetch('/auth/masuk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, telegramId })
+        });
+        
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Gagal masuk ke sistem.");
+        }
+
+        if (typeof showToast === 'function') {
+          showToast("success", "Login Berhasil!");
+        } else {
+          alert("Login Berhasil!");
+        }
+        setTimeout(() => { if (tg) tg.close(); }, 2000);
+
+      } catch (err) {
+        if (typeof showToast === 'function') {
+          showToast("error", err.message || "Terjadi kesalahan koneksi.");
+        } else {
+          alert(err.message || "Terjadi kesalahan koneksi.");
+        }
+        btn.disabled = false;
+        btnText.innerText = originalText;
+      }
+    }
+
+    // ============================================================
+    // HANDLER REGISTER
+    // ============================================================
+
+    async function handleRegister(e) {
+      e.preventDefault();
+
+      const nameEl = document.getElementById('regName');
+      const emailEl = document.getElementById('regEmail');
+      const passwordEl = document.getElementById('regPassword');
+      const nameErrEl = document.getElementById('regNameError');
+      const emailErrEl = document.getElementById('regEmailError');
+      const passwordErrEl = document.getElementById('regPasswordError');
+
+      // Reset state
+      clearFieldState(nameEl, nameErrEl);
+      clearFieldState(emailEl, emailErrEl);
+      clearFieldState(passwordEl, passwordErrEl);
+
+      let hasError = false;
+
+      // Validasi nama
+      if (!nameEl.value || nameEl.value.trim().length < 3) {
+        showFieldError(nameEl, nameErrEl, 'Nama minimal 3 karakter.');
+        hasError = true;
+      }
+
+      // Validasi email (wajib gmail.com)
+      const emailCheck = validateEmail(emailEl.value);
+      if (!emailCheck.valid) {
+        showFieldError(emailEl, emailErrEl, emailCheck.message);
+        hasError = true;
+      }
+
+      // Validasi password kuat
+      const passwordCheck = validatePassword(passwordEl.value);
+      if (!passwordCheck.valid) {
+        showFieldError(passwordEl, passwordErrEl, passwordCheck.message);
+        hasError = true;
+      }
+
+      if (hasError) {
+        const firstError = document.querySelector('.input-error');
+        if (firstError) firstError.focus();
+        return;
+      }
+
+      const btn = document.getElementById('regBtn');
+      const btnText = btn.querySelector('.btn-text');
+
+      btn.disabled = true;
+      const originalText = btnText.innerText;
+      btnText.innerHTML = '<span class="spinner"></span> MENDAFTARKAN...';
+
+      const name = nameEl.value.trim();
+      const email = emailEl.value.trim().toLowerCase();
+      const password = passwordEl.value;
+      const telegramId = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : null;
+
+      try {
+        const res = await fetch('/auth/daftar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, telegramId })
+        });
+        
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Gagal mendaftarkan akun.");
+        }
+
+        if (typeof showToast === 'function') {
+          showToast("success", "Pendaftaran Berhasil!");
+        } else {
+          alert("Pendaftaran Berhasil!");
+        }
+        setTimeout(() => { if (tg) tg.close(); }, 2000);
+
+      } catch (err) {
+        if (typeof showToast === 'function') {
+          showToast("error", err.message || "Terjadi kesalahan koneksi.");
+        } else {
+          alert(err.message || "Terjadi kesalahan koneksi.");
+        }
+        btn.disabled = false;
+        btnText.innerText = originalText;
+      }
+    }
+  </script>
+
+</body>
+</html>

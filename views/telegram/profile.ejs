@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nokos Profile - Mini App</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="/js/handler.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+        :root { --bg-body: #f8fafc; --bg-card: #ffffff; --text-main: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0; --input-bg: #f8fafc; --primary-color: #2563eb; }
+        [data-theme="dark"] { --bg-body: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8; --border-color: #334155; --input-bg: #0f172a; }
+        body { background-color: var(--bg-body); color: var(--text-main); padding-bottom: 30px; font-size: 0.88rem; }
+        .container { max-width: 440px; margin: 12px auto; padding: 0 12px; display: flex; flex-direction: column; gap: 12px; }
+
+        /* Profile Header Card Minimalis */
+        .profile-header-card { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); padding: 24px 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); position: relative; }
+        .theme-toggle-btn { position: absolute; top: 14px; right: 14px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); font-size: 0.85rem; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        .avatar-wrapper { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; font-size: 1.8rem; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); overflow: hidden; }
+        .avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .profile-name { font-size: 1.15rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.3px; }
+        .profile-username { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; margin-top: -2px; }
+
+        .badge-active { background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; }
+        .badge-inactive { background: #fee2e2; color: #dc2626; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; }
+
+        /* Card Umum */
+        .card { background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 16px; box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.04); }
+        .card-title { font-size: 0.88rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+        /* Saldo Box */
+        .mini-balance-box { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
+        .mini-balance-left span { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; display: block; }
+        .mini-balance-left h3 { font-size: 1.25rem; font-weight: 800; color: var(--primary-color); margin-top: 2px; }
+        .btn-topup-mini { background: #2563eb; color: #ffffff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+
+        /* Detail List */
+        .info-list { display: flex; flex-direction: column; gap: 8px; }
+        .info-item { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px; }
+        .info-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .info-value { font-size: 0.82rem; font-weight: 700; color: var(--text-main); }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="container">
+        <!-- HEADER PROFIL -->
+        <div class="profile-header-card">
+            <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Ganti Mode">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+
+            <div class="avatar-wrapper" id="avatarContainer">
+                <span id="avatarInitial"><%= (user?.name ? user.name.charAt(0).toUpperCase() : 'U') %></span>
+            </div>
+
+            <div>
+                <h2 class="profile-name"><%= user?.name || "Pengguna Nokos" %></h2>
+                <div class="profile-username">@<%= user?.telegram?.username || user?.username || 'telegram_user' %></div>
+                <div>
+                    <% if (user?.isSignin) { %>
+                        <span class="badge-active"><i class="fa-solid fa-circle-check"></i> Akun Aktif</span>
+                    <% } else { %>
+                        <span class="badge-inactive"><i class="fa-solid fa-circle-xmark"></i> Belum Verifikasi</span>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- SALDO & TOP UP -->
+        <div class="card" style="padding: 12px 16px;">
+            <div class="mini-balance-box">
+                <div class="mini-balance-left">
+                    <span>Saldo Dompet</span>
+                    <h3>Rp <%= Number(user?.balance || 0).toLocaleString('id-ID') %></h3>
+                </div>
+                <a href="/t/topup/<%= user?.telegram?.uid || user?.telegramId || '' %>" class="btn-topup-mini">
+                    <i class="fa-solid fa-wallet"></i> Top Up
+                </a>
+            </div>
+        </div>
+
+        <!-- INFORMASI AKUN -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-user-shield" style="color: #2563eb;"></i> Informasi Detail</div>
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="info-label"><i class="fa-solid fa-id-badge"></i> Telegram UID</span>
+                    <span class="info-value"><%= user?.telegram?.uid || user?.telegramId || '-' %></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fa-solid fa-envelope"></i> Email</span>
+                    <span class="info-value"><%= user?.email || '-' %></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fa-solid fa-calendar-days"></i> Bergabung</span>
+                    <span class="info-value"><%= user?.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-' %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const tgUser = tg.initDataUnsafe.user;
+                if (tgUser.photo_url) {
+                    const avatarContainer = document.getElementById('avatarContainer');
+                    avatarContainer.innerHTML = `<img src="${tgUser.photo_url}" alt="Profile Photo">`;
+                }
+            }
+        });
+
+        window.toggleTheme = function() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.className = 'fa-solid fa-sun';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fa-solid fa-moon';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+    <nav class="navbar">
+        <a href="#" class="nav-brand"><i class="fa-solid fa-bolt"></i> Nokos</a>
+
+        <!-- Profile Dropdown -->
+        <div class="profile-container">
+            <button class="profile-btn" id="profileBtn">
+                <i class="fa-solid fa-circle-user" style="color: #2563eb; font-size: 1.1rem;"></i>
+                <span id="userName"><%= user?.name || "Anonim" %></span>
+                <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
+            </button>
+
+            <div class="dropdown-menu" id="dropdownMenu">
+                <div class="dropdown-balance">
+                    <span>Saldo Anda</span>
+                    <h4 id="userBalanceText">Rp <%= (user?.balance).toLocaleString('id-ID') %>
+ %></h4>
+                </div>
+                <a href="/t/dashboard" class="dropdown-item"><i class="fa-solid fa-box-archive"></i> Home</a>
+                <a href="/t/riwayat-order" class="dropdown-item"><i class="fa-solid fa-box-archive"></i> Riwayat Order</a>
+                <a href="/t/profil" class="dropdown-item"><i class="fa-solid fa-user"></i> Profile</a>
+                <div class="dropdown-item" style="border-top: 1px solid var(--border-color); justify-content: space-between;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Mode Tampilan</span>
+                    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Ganti Mode">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>

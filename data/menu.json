@@ -1,0 +1,14 @@
+{
+  "start": {
+    "text": "Selamat datang di Nokos-panel! Silakan lakukan pendaftaran terlebih dahulu untuk menggunakan bot ini. Klik tombol *Daftar* di bawah:",
+    "keyboard": [
+      [{"text": "📝 Daftar"}]
+    ]
+  },
+  "menu_utama": {
+    "text": "Halo! Kamu sudah terdaftar di sistem Nokos-panel. Silakan pilih menu di bawah:",
+    "keyboard": [
+      [{"text": "💰 Saldo"}, {"text": "👤 Akun Saya"}]
+    ]
+  }
+}

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend System Logger</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-body: #07090e;
+            --bg-card: #0e131f;
+            --bg-card-hover: #141b2d;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --border-color: #1e293b;
+            --font-code: 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-sans);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title i {
+            font-size: 1.4rem;
+            color: #f43f5e;
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        /* CONTROLS BAR */
+        .controls-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 0.88rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: #3b82f6;
+        }
+
+        .btn-delete-all {
+            background: rgba(244, 63, 94, 0.08);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            color: #f43f5e;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete-all:hover {
+            background: rgba(244, 63, 94, 0.18);
+            border-color: #f43f5e;
+        }
+
+        /* LOG LIST CONTAINER */
+        .log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* ERROR CARD */
+        .log-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .log-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-1px);
+            border-color: #334155;
+        }
+
+        /* RIBBON KODE LEVEL ERROR */
+        .log-ribbon {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .log-card.level-500 { border-color: rgba(244, 63, 94, 0.3); }
+        .log-card.level-500 .log-ribbon { background: rgba(244, 63, 94, 0.12); color: #f43f5e; border-left: 1px solid rgba(244, 63, 94, 0.2); }
+
+        .log-card.level-400 { border-color: rgba(234, 179, 8, 0.3); }
+        .log-card.level-400 .log-ribbon { background: rgba(234, 179, 8, 0.12); color: #eab308; border-left: 1px solid rgba(234, 179, 8, 0.2); }
+
+        .log-card.level-401 { border-color: rgba(249, 115, 22, 0.3); }
+        .log-card.level-401 .log-ribbon { background: rgba(249, 115, 22, 0.12); color: #f97316; border-left: 1px solid rgba(249, 115, 22, 0.2); }
+
+        .log-card.level-404 { border-color: rgba(6, 182, 212, 0.3); }
+        .log-card.level-404 .log-ribbon { background: rgba(6, 182, 212, 0.12); color: #06b6d4; border-left: 1px solid rgba(6, 182, 212, 0.2); }
+
+        .log-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            padding-right: 50px;
+            overflow: hidden;
+        }
+
+        .badge-method {
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: var(--font-code);
+            background: rgba(59, 130, 246, 0.12);
+            color: #3b82f6;
+            flex-shrink: 0;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .log-message {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #cbd5e1;
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px;
+            background: var(--bg-card);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        /* MODAL (POP-UP) YANG Keren & Clean */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 5, 8, 0.8);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 16px;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal-content {
+            background: #0c101d;
+            border: 1px solid #26354a;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            animation: modalPop 0.2s ease-out;
+        }
+
+        @keyframes modalPop {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #101626;
+        }
+
+        .modal-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+
+        .modal-close {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .modal-close:hover { background: rgba(244,63,94,0.15); color: #f43f5e; border-color: rgba(244,63,94,0.3); }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            background: #07090e;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            font-size: 0.82rem;
+        }
+
+        .info-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        /* TERMINAL BOX UNTUK MESSAGE & STACK TRACE (Bisa Scroll Kanan-Kiri & Atas-Bawah) */
+        .terminal-box {
+            background: #040609;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            position: relative;
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        pre.terminal-content {
+            font-family: var(--font-code);
+            font-size: 0.78rem;
+            color: #f87171;
+            white-space: pre; /* Memastikan teks panjang tidak membungkus agar scroll horizontal berfungsi */
+            word-break: normal;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow: auto; /* Mengaktifkan scroll horizontal dan vertikal */
+            padding-right: 4px;
+        }
+
+        /* Kustomisasi scrollbar terminal agar lebih rapi */
+        pre.terminal-content::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        pre.terminal-content::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+
+        .btn-copy {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .btn-copy:hover { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.1); }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+        }
+
+        .btn-delete-single {
+            background: rgba(244, 63, 94, 0.08);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            color: #f43f5e;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-delete-single:hover { background: rgba(244, 63, 94, 0.2); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-title">
+                <i class="fa-solid fa-terminal"></i>
+                <h1>Backend System Logger</h1>
+            </div>
+        </div>
+
+        <!-- CONTROLS BAR -->
+        <div class="controls-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Cari pesan error..." onkeyup="filterLogs()">
+            </div>
+            <button class="btn-delete-all" onclick="deleteAllLogs()">
+                <i class="fa-solid fa-trash-can"></i> Hapus Semua
+            </button>
+        </div>
+
+        <!-- LOG CARDS CONTAINER -->
+        <div class="log-list" id="logCardContainer">
+            <!-- Dynamic Cards -->
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL -->
+    <div class="modal-overlay" id="logModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-bug" style="color: #f43f5e;"></i>
+                    <span>Detail Error Record</span>
+                </div>
+                <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="info-grid">
+                    <div>
+                        <span class="info-label">Document ID</span>
+                        <span id="mDocId" style="font-family:var(--font-code); color:var(--text-muted); font-size:0.78rem;"></span>
+                    </div>
+                    <div>
+                        <span class="info-label">Status Code</span>
+                        <span id="mStatus" style="font-weight:700;"></span>
+                    </div>
+                    <div>
+                        <span class="info-label">Method</span>
+                        <span id="mMethod" style="font-weight:700;"></span>
+                    </div>
+                    <div>
+                        <span class="info-label">Timestamp</span>
+                        <span id="mCreated" style="font-family:var(--font-code); color:var(--text-muted); font-size:0.78rem;"></span>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <span class="info-label">Path Route</span>
+                        <span id="mPath" style="font-family:var(--font-code); color:#06b6d4; word-break:break-all;"></span>
+                    </div>
+                </div>
+
+                <!-- BUNGKUS ERROR MESSAGE KE TERMINAL BOX AGAR BISA DI-SCROLL KANAN-KIRI -->
+                <div class="terminal-box">
+                    <div class="terminal-header">
+                        <span>Error Message</span>
+                        <button class="btn-copy" onclick="copyText('mMessageContent')"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                    <pre class="terminal-content" id="mMessageContent" style="color: #f87171; max-height: 100px;"></pre>
+                </div>
+
+                <!-- STACK TRACE BOX -->
+                <div class="terminal-box">
+                    <div class="terminal-header">
+                        <span>Raw Stack Trace</span>
+                        <button class="btn-copy" onclick="copyText('mTrace')"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                    <pre class="terminal-content" id="mTrace"></pre>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-delete-single" id="btnDeleteSingle">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Log Ini
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load data dari logger EJS dan urutkan dari yang terbaru ke terlama
+        let logData = <%- JSON.stringify(logger || []) %>;
+        logData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        let activeDocId = null;
+
+        function formatDate(isoStr) {
+            if (!isoStr) return '-';
+            const date = new Date(isoStr);
+            return date.toLocaleString('id-ID', { 
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false
+            });
+        }
+
+        function renderLogs(logs) {
+            const container = document.getElementById('logCardContainer');
+            container.innerHTML = '';
+
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-check" style="font-size: 1.5rem; color: #10b981; margin-bottom: 8px;"></i><br>Tidak ada riwayat log error</div>';
+                return;
+            }
+
+            logs.forEach((log) => {
+                const docId = log.documentId || log.id || '';
+                const statusCode = log.statusCode || 500;
+                const method = log.method || 'GET';
+                const message = log.message || 'Unknown Error';
+
+                const card = document.createElement('div');
+                card.className = `log-card level-${statusCode}`;
+                card.onclick = () => openModal(log);
+
+                card.innerHTML = `
+                    <div class="log-info">
+                        <span class="badge-method">${method}</span>
+                        <span class="log-message">${message}</span>
+                    </div>
+                    <div class="log-ribbon">${statusCode}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function deleteSingleLog(docId) {
+            if (!docId) return;
+            if (!confirm("Hapus log error ini?")) return;
+
+            try {
+                const response = await fetch(`/api/logs/${docId}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    logData = logData.filter(item => (item.documentId || item.id) !== docId);
+                    renderLogs(logData);
+                    closeModal();
+                } else {
+                    alert(result.message || 'Gagal menghapus log.');
+                }
+            } catch (err) {
+                console.error('Error deleting log:', err);
+                alert('Terjadi kesalahan koneksi.');
+            }
+        }
+
+        async function deleteAllLogs() {
+            if (logData.length === 0) return;
+            if (!confirm("Apakah Anda yakin ingin menghapus semua riwayat log error?")) return;
+
+            try {
+                const response = await fetch('/ad/logger/delete', { method: 'DELETE' });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    logData = [];
+                    renderLogs(logData);
+                } else {
+                    alert(result.message || 'Gagal menghapus seluruh log.');
+                }
+            } catch (err) {
+                console.error('Error deleting all logs:', err);
+                alert('Terjadi kesalahan koneksi.');
+            }
+        }
+
+        function openModal(log) {
+            activeDocId = log.documentId || log.id || '';
+
+            document.getElementById('mDocId').innerText = activeDocId || '-';
+            document.getElementById('mStatus').innerText = log.statusCode || 500;
+            document.getElementById('mMethod').innerText = log.method || 'GET';
+            document.getElementById('mPath').innerText = log.path || '-';
+            document.getElementById('mCreated').innerText = formatDate(log.createdAt);
+            document.getElementById('mMessageContent').innerText = log.message || '-';
+            document.getElementById('mTrace').innerText = log.rawError || log.stack || log.message || '-';
+
+            const btnDelete = document.getElementById('btnDeleteSingle');
+            btnDelete.onclick = () => deleteSingleLog(activeDocId);
+
+            document.getElementById('logModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('logModal').classList.remove('show');
+        }
+
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Berhasil disalin ke clipboard!');
+            });
+        }
+
+        function filterLogs() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = logData.filter(log => {
+                const msg = (log.message || '').toLowerCase();
+                const path = (log.path || '').toLowerCase();
+                const code = String(log.statusCode || '');
+                const docId = (log.documentId || log.id || '').toLowerCase();
+
+                return msg.includes(query) || path.includes(query) || code.includes(query) || docId.includes(query);
+            });
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            renderLogs(filtered);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLogs(logData);
+        });
+    </script>
+</body>
+</html>

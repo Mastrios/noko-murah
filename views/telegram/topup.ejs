@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nokos Top Up - Mini App</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="/js/handler.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+        :root { --bg-body: #f8fafc; --bg-card: #ffffff; --text-main: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0; --input-bg: #ffffff; --receipt-bg: #f8fafc; --modal-bg: #ffffff; --primary-color: #2563eb; }
+        [data-theme="dark"] { --bg-body: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8; --border-color: #334155; --input-bg: #0f172a; --receipt-bg: #0f172a; --modal-bg: #1e293b; }
+        body { background-color: var(--bg-body); color: var(--text-main); padding-bottom: 30px; font-size: 0.88rem; }
+        .container { max-width: 440px; margin: 12px auto; padding: 0 12px; display: flex; flex-direction: column; gap: 12px; }
+        .balance-card { background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 14px; padding: 14px 16px; color: #ffffff; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15); }
+        .balance-row-top { display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; opacity: 0.9; font-weight: 500; }
+        .balance-row-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .balance-amount { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; white-space: nowrap; }
+        .balance-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .theme-toggle-btn { background: rgba(255, 255, 255, 0.2); border: none; color: #ffffff; font-size: 0.85rem; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .card { background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 16px; box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.04); }
+        .card-title { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+        .card-subtitle { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px; }
+        .nominal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+        .nominal-btn { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center; font-size: 0.85rem; font-weight: 600; color: var(--text-main); cursor: pointer; }
+        .nominal-btn.active { border-color: #2563eb; background: rgba(37, 99, 235, 0.08); color: #2563eb; }
+        .form-group { margin-bottom: 12px; }
+        .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-main); margin-bottom: 5px; }
+        .input-group-rp { display: flex; align-items: center; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; }
+        .input-prefix { font-size: 0.88rem; font-weight: 700; color: var(--text-muted); }
+        .form-input-right { width: 100%; border: none; background: transparent; padding: 10px 0 10px 6px; font-size: 1rem; font-weight: 700; color: var(--text-main); text-align: right; outline: none; }
+        .payment-method-box { display: flex; align-items: center; justify-content: space-between; background: var(--receipt-bg); border: 1px solid #2563eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+        .payment-info { display: flex; align-items: center; gap: 10px; }
+        .payment-icon { width: 36px; height: 36px; background: #eff6ff; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; }
+        .payment-text h5 { font-size: 0.82rem; color: var(--text-main); font-weight: 700; }
+        .payment-text span { font-size: 0.7rem; color: var(--text-muted); }
+        .btn-topup { width: 100%; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #2563eb; }
+        #qrisSection { display: none; }
+        .card-checkout { background: var(--bg-card); border-radius: 18px; border: 1px solid var(--border-color); padding: 20px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .scan-header { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; }
+        .timer-badge { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; padding: 5px 12px; border-radius: 50px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; margin-bottom: 16px; }
+        .qris-box { background: #ffffff; border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; width: 100%; max-width: 240px; display: flex; flex-direction: column; align-items: center; margin-bottom: 16px; }
+        .qris-canvas-wrapper { width: 190px; height: 190px; background: #ffffff; padding: 4px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .qris-image { width: 100%; height: 100%; object-fit: contain; }
+        .qris-footer-text { font-size: 0.65rem; color: #64748b; font-weight: 700; margin-top: 10px; text-transform: uppercase; }
+        .sandbox-box { width: 100%; background: #eff6ff; border: 1px dashed #2563eb; border-radius: 10px; padding: 10px; margin-bottom: 16px; text-align: left; }
+        .sandbox-title { font-size: 0.7rem; font-weight: 700; color: #1d4ed8; margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
+        .sandbox-input-group { display: flex; gap: 6px; }
+        .sandbox-input { width: 100%; background: #ffffff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 5px 8px; font-size: 0.7rem; color: #1e293b; outline: none; }
+        .sandbox-btn-copy { background: #2563eb; color: #ffffff; border: none; border-radius: 6px; padding: 0 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+        .amount-container { width: 100%; background: var(--receipt-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 2px; align-items: center; }
+        .amount-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .amount-value { font-size: 1.5rem; font-weight: 800; color: var(--primary-color); }
+        .trx-details { width: 100%; display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed var(--border-color); padding-top: 14px; text-align: left; margin-bottom: 14px; }
+        .trx-row { display: grid; grid-template-columns: 120px 1fr; align-items: flex-start; gap: 8px; font-size: 0.78rem; }
+        .trx-row span:first-child { color: var(--text-muted); font-weight: 500; }
+        .trx-row span:last-child { font-weight: 700; color: var(--text-main); word-break: break-all; }
+        .status-badge-inline { background: #eff6ff; color: var(--primary-color); padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+        .payment-instructions { width: 100%; background: var(--receipt-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 14px; text-align: left; }
+        .instructions-title { font-size: 0.75rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+        .instructions-list { font-size: 0.7rem; color: var(--text-muted); padding-left: 14px; display: flex; flex-direction: column; gap: 3px; line-height: 1.35; }
+        .btn-cancel-trx { width: 100%; background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 12px; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: var(--modal-bg); width: 100%; max-width: 380px; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 15px 25px -5px rgba(0,0,0,0.2); border: 1px solid var(--border-color); }
+        .modal-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .modal-close-btn { background: var(--receipt-bg); border: 1px solid var(--border-color); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+        .invoice-details { background: var(--receipt-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+        .invoice-row { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); }
+        .invoice-row span:last-child { font-weight: 600; color: var(--text-main); }
+        .invoice-total-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 2px; }
+        .invoice-total-row .pay-amount { font-size: 1.1rem; font-weight: 700; color: #2563eb; }
+        .btn-pay-now { background-color: #16a34a; border-radius: 10px; font-weight: 700; padding: 12px; width: 100%; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.88rem; }
+        .history-card { background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 16px; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; background: var(--receipt-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px; }
+        .history-left { display: flex; flex-direction: column; gap: 2px; }
+        .history-nominal { font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
+        .history-date { font-size: 0.68rem; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+        .history-status { font-size: 0.68rem; font-weight: 600; padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 3px; }
+        .status-success { background: #dcfce7; color: #16a34a; }
+        .status-pending { background: #fef3c7; color: #b45309; }
+        .status-cancel, .status-expired { background: #fee2e2; color: #dc2626; }
+        .pagination-container { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-color); }
+        .page-info { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+        .page-buttons { display: flex; gap: 5px; }
+        .page-btn { background: var(--receipt-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 5px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="container">
+        <!-- WIDGET SALDO -->
+        <div class="balance-card">
+            <div class="balance-row-top">
+                <span>Akun Anda: <%= user?.name || "Anonim" %></span>
+            </div>
+            <div class="balance-row-bottom">
+                <div class="balance-amount" id="userBalanceText">
+                    Rp <%= (user?.balance || 0).toLocaleString('id-ID') %>
+                </div>
+                <div class="balance-actions">
+                    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Ganti Mode">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM INPUT TOP UP -->
+        <div id="formSection">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-wallet" style="color: #2563eb;"></i> Top Up Saldo Akun</div>
+                <div class="card-subtitle">Pilih nominal instan atau masukkan jumlah yang diinginkan (Min. Rp 5.000).</div>
+
+                <form id="topupForm" onsubmit="openInvoiceModal(event)">
+                    <div class="form-group">
+                        <label class="form-label">Pilih Nominal Cepat</label>
+                        <div class="nominal-grid">
+                            <div class="nominal-btn" onclick="selectNominal(10000)">Rp 10.000</div>
+                            <div class="nominal-btn" onclick="selectNominal(15000)">Rp 15.000</div>
+                            <div class="nominal-btn" onclick="selectNominal(20000)">Rp 20.000</div>
+                            <div class="nominal-btn" onclick="selectNominal(25000)">Rp 25.000</div>
+                            <div class="nominal-btn" onclick="selectNominal(30000)">Rp 30.000</div>
+                            <div class="nominal-btn" onclick="selectNominal(50000)">Rp 50.000</div>
+                            <div class="nominal-btn" onclick="selectNominal(100000)">Rp 100.000</div>
+                            <div class="nominal-btn" onclick="selectNominal(300000)">Rp 300.000</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Atau Masukkan Nominal Lain</label>
+                        <div class="input-group-rp">
+                            <span class="input-prefix">Rp</span>
+                            <input type="text" id="manualAmountInput" class="form-input-right" placeholder="0" oninput="onManualInput(this)">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Metode Pembayaran</label>
+                        <div class="payment-method-box">
+                            <div class="payment-info">
+                                <div class="payment-icon"><i class="fa-solid fa-qrcode"></i></div>
+                                <div class="payment-text">
+                                   <h5>QRIS Otomatis</h5>
+                                   <span>Semua E-Wallet & Mobile Banking</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-circle-check" style="color: #2563eb; font-size: 1.1rem;"></i>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-topup">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Buat Permintaan Top Up
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAMPILAN QRIS CHECKOUT -->
+        <div id="qrisSection">
+            <div class="card-checkout">
+                <div class="scan-header"><i class="fa-solid fa-qrcode"></i> Scan QR Code</div>
+                <div class="timer-badge"><i class="fa-regular fa-clock"></i> Selesaikan dalam <span id="countdown">15:00</span></div>
+
+                <div class="qris-box">
+                    <div class="qris-canvas-wrapper" id="qrcodeContainer"></div>
+                    <div class="qris-footer-text">Nokos Official Payment</div>
+                </div>
+
+                <% if (typeof isSandbox !== 'undefined' && isSandbox) { %>
+                <div class="sandbox-box" id="sandboxBox">
+                    <div class="sandbox-title"><i class="fa-solid fa-flask"></i> Midtrans Sandbox Simulator URL</div>
+                    <div class="sandbox-input-group">
+                        <input type="text" id="sandboxUrlInput" class="sandbox-input" readonly>
+                        <button type="button" class="sandbox-btn-copy" onclick="copySandboxUrl()">Copy</button>
+                    </div>
+                </div>
+                <% } %>
+
+                <div class="amount-container">
+                    <div class="amount-label">Total Pembayaran</div>
+                    <span class="amount-value" id="qrisTotalDisplay">Rp 0</span>
+                </div>
+
+                <div class="trx-details">
+                    <div class="trx-row">
+                        <span>ID Transaksi</span>
+                        <span id="qrisOrderIdDisplay">-</span>
+                    </div>
+                    <div class="trx-row">
+                        <span>Nominal Top Up</span>
+                        <span id="qrisNominalDisplay">Rp 0</span>
+                    </div>
+                    <div class="trx-row">
+                        <span>Biaya Layanan</span>
+                        <span>Rp 0</span>
+                    </div>
+                    <div class="trx-row">
+                        <span>Status</span>
+                        <span>
+                            <span class="status-badge-inline" id="qrisStatusBadge">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Menunggu
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="payment-instructions">
+                    <div class="instructions-title"><i class="fa-solid fa-circle-info" style="color: #2563eb;"></i> Petunjuk Pembayaran</div>
+                    <ol class="instructions-list">
+                        <li>Buka aplikasi E-Wallet atau m-Banking Anda.</li>
+                        <li>Pilih menu <b>Scan / Bayar QRIS</b>.</li>
+                        <li>Arahkan kamera ke QR Code di atas atau upload gambar QR.</li>
+                        <li>Pastikan nominal tagihan sesuai, lalu konfirmasi pembayaran.</li>
+                    </ol>
+                </div>
+
+                <button type="button" class="btn-cancel-trx" id="btnCancelTrx" onclick="cancelTransaction()">
+                    <i class="fa-solid fa-ban"></i> Batalkan Transaksi
+                </button>
+            </div>
+        </div>
+
+        <!-- RIWAYAT TOP UP -->
+        <div class="history-card" id="historySection">
+            <div class="card-title" style="font-size: 0.9rem;"><i class="fa-solid fa-clock-rotate-left" style="color: #2563eb;"></i> Riwayat Top Up</div>
+            <div class="history-list" id="historyListContainer">
+                <% if (riwayat && riwayat.length > 0) { %>
+                    <% riwayat.forEach((item, index) => { %>
+                        <div class="history-item history-row-item" data-index="<%= index %>" style="display: none;">
+                            <div class="history-left">
+                                <span class="history-nominal">Rp <%= Number(item.gross_amount || 0).toLocaleString('id-ID') %></span>
+                                <span class="history-date">
+                                    <i class="fa-regular fa-calendar-days"></i> 
+                                    <%= item.createdAt ? new Date(item.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-' %>
+                                </span>
+                            </div>
+                            <div>
+                                <% if (item.status === 'success') { %>
+                                    <span class="history-status status-success"><i class="fa-solid fa-check-circle"></i> Berhasil</span>
+                                <% } else if (item.status === 'cancel' || item.status === 'expired') { %>
+                                    <span class="history-status status-cancel"><i class="fa-solid fa-circle-xmark"></i> <%= item.status === 'cancel' ? 'Batal' : 'Expired' %></span>
+                                <% } else { %>
+                                    <span class="history-status status-pending"><i class="fa-solid fa-clock"></i> Pending</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div style="text-align: center; padding: 20px 10px; color: var(--text-muted); font-size: 0.8rem;">
+                        <i class="fa-regular fa-folder-open" style="font-size: 1.5rem; margin-bottom: 6px; display: block; opacity: 0.5;"></i>
+                        Belum ada riwayat top up.
+                    </div>
+                <% } %>
+            </div>
+
+            <% if (riwayat && riwayat.length > 0) { %>
+            <div class="pagination-container" id="paginationContainer" style="display: none;">
+                <span class="page-info" id="pageInfoText">Halaman 1 dari 1</span>
+                <div class="page-buttons">
+                    <button type="button" class="page-btn" id="prevPageBtn" onclick="changePage(-1)" disabled><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                    <button type="button" class="page-btn" id="nextPageBtn" onclick="changePage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- MODAL INVOICE -->
+    <div class="modal-overlay" id="invoiceModal">
+        <div class="modal-box">
+            <div class="modal-header-top">
+                <h3><i class="fa-solid fa-receipt" style="color: #2563eb;"></i> Rincian Pembayaran</h3>
+                <button class="modal-close-btn" onclick="closeInvoiceModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="invoice-details">
+                <div class="invoice-row"><span>Metode Pembayaran:</span><span>QRIS Otomatis</span></div>
+                <div class="invoice-row"><span>Nominal Top Up:</span><span id="invNominal">Rp 0</span></div>
+                <div class="invoice-row"><span>Biaya Admin (Fee):</span><span>Rp 0</span></div>
+                <div class="invoice-total-row"><span>Total Pembayaran:</span><span class="pay-amount" id="invTotal">Rp 0</span></div>
+            </div>
+            <button type="button" class="btn-pay-now" id="btnPayNow" onclick="executePayment()">
+                <i class="fa-solid fa-shield-halved"></i> Bayar Sekarang (Pay)
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script type="module">
+        import { listenToDocumentChanges } from '/js/firestore-listener.js';
+
+        let selectedAmount = 0;
+        const adminFee = 0;
+        let activeOrderId = null;
+        let unsubscribeListener = null;
+        let countdownTimer = null;
+
+        let currentPage = 1;
+        const itemsPerPage = 5; // Diubah menjadi 5 item per halaman
+        let historyItems = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            historyItems = document.querySelectorAll('.history-row-item');
+            if (historyItems.length > 0) {
+                renderPagination();
+            }
+        });
+
+        function cleanAmountNumber(val) {
+            if (!val) return 0;
+            const cleanStr = String(val).replace(/[^0-9]/g, '');
+            return parseInt(cleanStr, 10) || 0;
+        }
+
+        window.renderPagination = function() {
+            const totalItems = historyItems.length;
+            const pagContainer = document.getElementById('paginationContainer');
+
+            // Pagination HANYA muncul jika item lebih dari 5
+            if (totalItems <= 5) {
+                if (pagContainer) pagContainer.style.display = 'none';
+                historyItems.forEach(item => item.style.display = 'flex');
+                return;
+            } else {
+                if (pagContainer) pagContainer.style.display = 'flex';
+            }
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+
+            historyItems.forEach((item, index) => {
+                item.style.display = (index >= start && index < end) ? 'flex' : 'none';
+            });
+
+            document.getElementById('pageInfoText').textContent = `Halaman ${currentPage} dari ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = currentPage === 1;
+            document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+        }
+
+        window.changePage = function(direction) {
+            currentPage += direction;
+            renderPagination();
+        }
+
+        const userData = {
+            uid: "<%= user?.telegram?.uid || user?.telegramId || '' %>",
+            name: "<%= user?.name || 'Customer Nokos' %>",
+            email: "<%= user?.email || 'customer@nokos.com' %>"
+        };
+
+        window.toggleTheme = function() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.className = 'fa-solid fa-sun';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        window.selectNominal = function(amount) {
+            selectedAmount = cleanAmountNumber(amount);
+            document.getElementById('manualAmountInput').value = selectedAmount;
+            document.querySelectorAll('.nominal-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(selectedAmount.toLocaleString('id-ID'))) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        window.onManualInput = function(input) {
+            const cleanVal = input.value.replace(/[^0-9]/g, '');
+            if (input.value !== cleanVal) input.value = cleanVal;
+            selectedAmount = cleanAmountNumber(cleanVal);
+            document.querySelectorAll('.nominal-btn').forEach(btn => btn.classList.remove('active'));
+        }
+
+        window.openInvoiceModal = function(event) {
+            event.preventDefault();
+            const rawVal = document.getElementById('manualAmountInput').value;
+            selectedAmount = cleanAmountNumber(rawVal);
+
+            if (selectedAmount < 5000) {
+                alert('⚠️ Minimal top up saldo adalah Rp 5.000!');
+                return;
+            }
+
+            let totalPayment = selectedAmount + adminFee;
+            document.getElementById('invNominal').textContent = 'Rp ' + selectedAmount.toLocaleString('id-ID');
+            document.getElementById('invTotal').textContent = 'Rp ' + totalPayment.toLocaleString('id-ID');
+            
+            const payBtn = document.getElementById('btnPayNow');
+            payBtn.disabled = false;
+            payBtn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Bayar Sekarang (Pay)';
+            
+            document.getElementById('invoiceModal').classList.add('show');
+        }
+
+        window.closeInvoiceModal = function() {
+            const payBtn = document.getElementById('btnPayNow');
+            if (payBtn.disabled) return; 
+            document.getElementById('invoiceModal').classList.remove('show');
+        }
+
+        window.copySandboxUrl = function() {
+            const input = document.getElementById('sandboxUrlInput');
+            if (!input) return;
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                alert('📋 URL Simulator Sandbox berhasil disalin!');
+            });
+        }
+
+        window.executePayment = async function() {
+            const payBtn = document.getElementById('btnPayNow');
+            const closeBtn = document.querySelector('.modal-close-btn');
+            
+            payBtn.disabled = true;
+            closeBtn.style.pointerEvents = 'none';
+            closeBtn.style.opacity = '0.5';
+            payBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+
+            const totalGross = selectedAmount + adminFee;
+
+            try {
+                const response = await fetch('/api/mds/created-qris-front', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        grossAmount: totalGross,
+                        customerDetails: { first_name: userData.name, email: userData.email },
+                        uid: userData.uid
+                    })
+                });
+
+                const result = await response.json();
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Gagal membuat QRIS.');
+                }
+
+                document.getElementById('invoiceModal').classList.remove('show');
+
+                activeOrderId = result.data.order_id;
+                const qrString = result.data.qr_string;
+
+                document.getElementById('formSection').style.display = 'none';
+                document.getElementById('historySection').style.display = 'none';
+                document.getElementById('qrisSection').style.display = 'block';
+
+                document.getElementById('qrisOrderIdDisplay').textContent = '#' + activeOrderId;
+                document.getElementById('qrisNominalDisplay').textContent = 'Rp ' + selectedAmount.toLocaleString('id-ID');
+                document.getElementById('qrisTotalDisplay').textContent = 'Rp ' + totalGross.toLocaleString('id-ID');
+
+                document.getElementById('qrcodeContainer').innerHTML = `<img src="${qrString}" alt="QRIS Code" class="qris-image">`;
+
+                const sandboxInput = document.getElementById('sandboxUrlInput');
+                if (sandboxInput && result.data.qr_image_url) {
+                    sandboxInput.value = result.data.qr_image_url;
+                }
+
+                unsubscribeListener = listenToDocumentChanges(
+                    '<%= collection %>',
+                    activeOrderId,
+                    (data) => {
+                        const status = data.status || data.mapped_status;
+                        
+                        if (status === 'success') {
+                            if (unsubscribeListener) unsubscribeListener();
+                            if (countdownTimer) clearInterval(countdownTimer);
+                            
+                            document.getElementById('qrisStatusBadge').className = 'status-badge-inline status-success';
+                            document.getElementById('qrisStatusBadge').innerHTML = '<i class="fa-solid fa-check"></i> Berhasil';
+                            
+                            alert('🎉 Pembayaran berhasil! Saldo Anda telah diperbarui secara realtime.');
+                            window.location.reload();
+                        } else if (status === 'expired' || status === 'cancel') {
+                            if (unsubscribeListener) unsubscribeListener();
+                            if (countdownTimer) clearInterval(countdownTimer);
+                            
+                            document.getElementById('qrisStatusBadge').className = 'status-badge-inline status-cancel';
+                            document.getElementById('qrisStatusBadge').innerHTML = '<i class="fa-solid fa-xmark"></i> ' + status;
+                        }
+                    }
+                );
+
+                startCountdownTimer();
+
+            } catch (error) {
+                console.error(error);
+                alert('Terjadi kesalahan: ' + error.message);
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Bayar Sekarang (Pay)';
+            } finally {
+                closeBtn.style.pointerEvents = 'auto';
+                closeBtn.style.opacity = '1';
+            }
+        }
+
+        window.cancelTransaction = async function() {
+            if (!confirm('Apakah Anda yakin ingin membatalkan transaksi ini?')) return;
+
+            const cancelBtn = document.getElementById('btnCancelTrx');
+            cancelBtn.disabled = true;
+            cancelBtn.style.opacity = '0.7';
+            cancelBtn.style.pointerEvents = 'none';
+            cancelBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Membatalkan Transaksi...';
+
+            try {
+                if (unsubscribeListener) unsubscribeListener();
+                if (countdownTimer) clearInterval(countdownTimer);
+
+                if (activeOrderId) {
+                    await fetch('/api/mds/cancel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: activeOrderId })
+                    });
+                }
+            } catch (error) {
+                console.error('Gagal membatalkan transaksi:', error);
+            } finally {
+                window.location.reload();
+            }
+        }
+
+        function startCountdownTimer() {
+            let duration = 15 * 60;
+            const countdownEl = document.getElementById('countdown');
+            countdownTimer = setInterval(() => {
+                let m = Math.floor(duration / 60);
+                let s = duration % 60;
+                m = m < 10 ? '0' + m : m;
+                s = s < 10 ? '0' + s : s;
+                countdownEl.textContent = m + ':' + s;
+
+                if (--duration < 0) {
+                    clearInterval(countdownTimer);
+                    if (unsubscribeListener) unsubscribeListener();
+                    alert('Sesi pembayaran telah kadaluarsa!');
+                    window.location.reload();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

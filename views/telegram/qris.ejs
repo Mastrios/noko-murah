@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembayaran QRIS</title>
+    <!-- Google Fonts (Inter) & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --receipt-bg: #f8fafc;
+            --primary-color: #2563eb;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding: 20px 0 40px;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* --- CARD PAYMENT UTAMA --- */
+        .card-checkout {
+            background: var(--bg-card);
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+            padding: 24px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* TITLE HEADER WITH ICON */
+        .scan-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .scan-header i {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+
+        /* TIMER BADGE PRO */
+        .timer-badge {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fef3c7;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        /* KOTAK QRIS PROFESIONAL */
+        .qris-box {
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 18px;
+            padding: 20px;
+            width: 100%;
+            max-width: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            margin-bottom: 20px;
+        }
+
+        .qris-header-logo {
+            height: 26px;
+            margin-bottom: 16px;
+            object-fit: contain;
+        }
+
+        /* QRIS IMAGE WRAPPER */
+        .qris-canvas-wrapper {
+            width: 220px;
+            height: 220px;
+            background: #ffffff;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .qris-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .qris-footer-text {
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-top: 14px;
+            text-transform: uppercase;
+        }
+
+        /* NOMINAL DISPLAY */
+        .amount-container {
+            width: 100%;
+            background: var(--receipt-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .amount-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .amount-value {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
+        }
+
+        /* DETAIL TRANSAKSI */
+        .trx-details {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 16px;
+            text-align: left;
+        }
+
+        .trx-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .trx-row span:last-child {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .status-badge-inline {
+            background: #eff6ff;
+            color: var(--primary-color);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* CARD CARA BAYAR PROFESIONAL */
+        .card-guide {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        }
+
+        .guide-header {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .guide-steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .guide-step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .step-content {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
+        .step-content strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- CHECKOUT CARD -->
+        <div class="card-checkout">
+            
+            <!-- HEADER TITLE QRIS -->
+            <div class="scan-header">
+                <i class="fa-solid fa-qrcode"></i> Scan QR Code
+            </div>
+
+            <!-- TIMER EXPIRED -->
+            <div class="timer-badge">
+                <i class="fa-regular fa-clock"></i> Selesaikan dalam <span id="countdown">15:00</span>
+            </div>
+
+            <!-- FAKE QRIS CONTAINER -->
+            <div class="qris-box">
+
+                <div class="qris-canvas-wrapper">
+                    <!-- FAKE QR CODE IMAGE -->
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226680016COM.NOKOS.OFFICIAL5204599953033605802ID5910NOKOS%20PAY6007JAKARTA6304A1B2" alt="QRIS Code" class="qris-image">
+                </div>
+
+                <div class="qris-footer-text">Nokos Official Payment</div>
+            </div>
+
+            <!-- FAKE NOMINAL TOTAL -->
+            <div class="amount-container">
+                <div class="amount-label">Total Pembayaran</div>
+                <span class="amount-value">Rp 21.000</span>
+            </div>
+
+            <!-- FAKE RINCIAN TRANSAKSI -->
+            <div class="trx-details">
+                <div class="trx-row">
+                    <span>ID Transaksi</span>
+                    <span>#TRX-893201</span>
+                </div>
+                <div class="trx-row">
+                    <span>Nominal Top Up</span>
+                    <span>Rp 20.000</span>
+                </div>
+                <div class="trx-row">
+                    <span>Biaya Layanan</span>
+                    <span>Rp 1.000</span>
+                </div>
+                <div class="trx-row">
+                    <span>Status</span>
+                    <span>
+                        <span class="status-badge-inline">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Menunggu
+                        </span>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- PETUNJUK PEMBAYARAN PROFESIONAL -->
+        <div class="card-guide">
+            <div class="guide-header">
+                <i class="fa-solid fa-shield-halved" style="color: #2563eb;"></i> Panduan Pembayaran
+            </div>
+            
+            <div class="guide-steps-container">
+                <div class="guide-step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        Simpan atau <strong>tangkap layar (screenshot)</strong> kode QRIS di atas.
+                    </div>
+                </div>
+
+                <div class="guide-step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        Buka aplikasi <strong>m-Banking</strong> atau <strong>E-Wallet</strong> pilihan Anda (DANA, GoPay, OVO, ShopeePay, BCA, Mandiri, dll).
+                    </div>
+                </div>
+
+                <div class="guide-step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        Pilih menu <strong>Scan QRIS</strong>, lalu pilih ikon <strong>Galeri</strong> untuk mengunggah gambar kode QRIS.
+                    </div>
+                </div>
+
+                <div class="guide-step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        Periksa rincian transaksi lalu selesaikan pembayaran. Saldo akan otomatis bertambah secara real-time.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // FAKE TIMER HITUNG MUNDUR (15 MENIT)
+        let duration = 15 * 60; 
+        const countdownEl = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            let m = Math.floor(duration / 60);
+            let s = duration % 60;
+            m = m < 10 ? '0' + m : m;
+            s = s < 10 ? '0' + s : s;
+            countdownEl.textContent = m + ':' + s;
+
+            if (--duration < 0) {
+                clearInterval(timer);
+                alert('Sesi pembayaran telah kadaluarsa!');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
